@@ -1,0 +1,45 @@
+# LangChain
+langchain
+langchain-core
+langchain-community
+
+# LLM Providers
+langchain-openai
+langchain-mistralai
+openai
+mistralai
+
+# Multi-Agent Framework
+langgraph
+
+# Search
+tavily-python
+
+# Web Scraping
+beautifulsoup4
+requests
+lxml
+
+# Environment Variables
+python-dotenv
+
+# Token Counting
+tiktoken
+
+# Validation
+pydantic
+
+# Async Support
+aiohttp
+
+# Data Processing
+pandas
+
+# Retry Logic
+tenacity
+
+# Monitoring & Tracing
+langsmith
+
+# Utility
+typing-extensions
