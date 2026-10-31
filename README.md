@@ -1,93 +1,116 @@
-# ResearchMind
+# ResearchMind · Autonomous Multi-Agent AI Research System
 
-ResearchMind is a multi-agent research assistant. Given a topic, it searches the live web, reads a source page, writes a structured report, and critiques that report.
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-orange?logo=github)](https://github.com/Suhana-Pendhari/multi-agent-researcher)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)](https://python.org)
+[![Streamlit](https://img.shields.io/badge/Frontend-Streamlit-FF4B4B?logo=streamlit)](https://streamlit.io)
+[![LangChain](https://img.shields.io/badge/Orchestration-LangChain%20%2F%20LangGraph-1C3C3C)](https://langchain.com)
 
-It can be used from a Streamlit web UI or from the command line.
+**ResearchMind** is an autonomous multi-agent research assistant designed to conduct deep, factual, end-to-end research on any topic. By coordinating a team of specialized AI agents, the system autonomously searches the live web, extracts full-text webpage data, synthesizes structured executive reports, critiques output quality, and exports publication-ready deliverables.
 
-## Pipeline
+🔗 **Repository:** [https://github.com/Suhana-Pendhari/multi-agent-researcher](https://github.com/Suhana-Pendhari/multi-agent-researcher)
 
-1. **Search agent** — finds recent web results with Tavily
-2. **Reader agent** — scrapes the most relevant URL
-3. **Writer chain** — drafts a research report
-4. **Critic chain** — scores the report and lists strengths and gaps
+---
 
-## Project layout
+## 📌 Project Overview
 
-```
-multi-agent-system/
-├── app.py              # Streamlit UI
-├── pipeline.py         # CLI orchestrator
-├── pdf_export.py       # PDF report generation
-├── agents.py           # Agents, prompts, and LLM setup
-├── tools.py            # web_search and scrape_url
-├── test_system.py      # Smoke tests
-├── requirements.txt
-├── .env                # API keys (not committed)
-└── notes.txt           # Longer project notes
-```
-
-## Setup
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-On macOS or Linux:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-Create a `.env` file in the project root:
+ResearchMind automates the labor-intensive academic and market research workflow. Given a research topic, four specialized AI agents collaborate sequentially to deliver verified findings:
 
 ```
-GROQ_API_KEY=your_groq_key
-TAVILY_API_KEY=your_tavily_key
+[ User Query / Topic ]
+          │
+          ▼
+┌────────────────────────────────────────────────────────┐
+│ 01. Search Agent (Tavily AI Search)                   │
+│ • Discovers high-signal, up-to-date web resources      │
+└───────────────────────┬────────────────────────────────┘
+                        │
+                        ▼
+┌────────────────────────────────────────────────────────┐
+│ 02. Reader Agent (Requests + BeautifulSoup)           │
+│ • Scrapes, cleans, and extracts deep DOM content       │
+└───────────────────────┬────────────────────────────────┘
+                        │
+                        ▼
+┌────────────────────────────────────────────────────────┐
+│ 03. Writer Chain (LLM + LCEL)                         │
+│ • Synthesizes structured reports with data tables      │
+└───────────────────────┬────────────────────────────────┘
+                        │
+                        ▼
+┌────────────────────────────────────────────────────────┐
+│ 04. Critic Chain (LLM Quality Evaluator)              │
+│ • Reviews, scores (X/10), and provides constructive gaps│
+└───────────────────────┬────────────────────────────────┘
+                        │
+                        ▼
+       [ Export as PDF (.pdf) & Markdown (.md) ]
 ```
 
-Optional fallback:
+---
 
-```
-GOOGLE_API_KEY=your_google_key
-```
+## ✨ Features
 
-Get keys from:
+- **Autonomous Multi-Agent Pipeline:** Seamless orchestration between discovery, content scraping, report writing, and peer review.
+- **Live Web Grounding:** Uses the Tavily Search API and DOM parsing to eliminate hallucination and guarantee up-to-date facts.
+- **Structured Executive Synthesis:** Generates comprehensive reports complete with introductions, structured key findings tables, policy implications, and source URLs.
+- **Unbiased Critic Review:** Built-in reviewer agent that grades the report, outlines key strengths, identifies gaps, and gives an objective verdict.
+- **Dual Format Export:** One-click instant download of research deliverables in both publication-grade **PDF format** (with custom headers, footers, pagination, and typography) and raw **Markdown (.md)**.
+- **Modern Dark-Mode UI:** Glassmorphic Streamlit interface featuring animated step cards, real-time pipeline status trackers, and collapsible inspection panels.
 
-- Groq: https://console.groq.com/keys
-- Tavily: https://tavily.com
-- Google AI: https://aistudio.google.com/apikey
+---
 
-The app tries Groq first, then Google Gemini if Groq is not configured.
+## 🛠️ Tech Stack
 
-## Run the web UI
+| Domain | Technology / Library | Role in System |
+| :--- | :--- | :--- |
+| **Agent Framework** | [LangChain](https://www.langchain.com/) & [LangGraph](https://www.langchain.com/langgraph) | Agent tool-binding, LCEL chains, and state management |
+| **LLM Backends** | [Groq](https://groq.com/) & [Google Gemini](https://ai.google.dev/) | High-speed inference for Writer and Critic evaluation chains |
+| **Search Engine** | [Tavily Search API](https://tavily.com/) | Real-time, AI-ranked search snippet discovery |
+| **Web Scraping** | `BeautifulSoup4`, `Requests`, `lxml` | HTTP document retrieval and clean DOM text extraction |
+| **User Interface** | [Streamlit](https://streamlit.io/) | Glassmorphic dark dashboard with real-time pipeline tracking |
+| **PDF Generation** | `fpdf2` | Production PDF document generation with custom layout & fonts |
+| **Resilience & Tuning** | `Tenacity`, `python-dotenv` | Exponential backoff, rate-limit retry logic, and secret management |
 
-```powershell
-streamlit run app.py
-```
+---
 
-Open the local URL Streamlit prints (usually `http://localhost:8501`), enter a topic, and click **Run Research Pipeline**. When a report is ready you can download it as Markdown or PDF.
+## 📸 Outputs & Visual Showcase
 
-## Run the CLI
+### 1. ResearchMind Dashboard & Real-Time Pipeline
+The modern glassmorphic dashboard allows users to submit research queries with quick-select topics while tracking pipeline progress across all four autonomous agents in real time.
 
-```powershell
-python pipeline.py
-```
+![ResearchMind Dashboard](Assets/Screenshot%20(830).png)
 
-You will be prompted for a topic. Step output is printed in the terminal.
+---
 
-## Check that the system is ready
+### 2. Synthesized Research Report
+The Writer agent synthesizes scraped web context into a clean, structured report featuring executive summaries, introductions, and section-by-section breakdowns.
 
-```powershell
-python test_system.py
-```
+![Report Overview](Assets/Screenshot%20(831).png)
 
-This checks API keys, imports, agent creation, and a simple LLM call.
+---
 
-## Notes
+### 3. Detailed Key Findings & Comparative Data Tables
+Complex data and industry projections (e.g., employment impacts, labor exposure, skill shifts) are automatically organized into structured comparative tables with supporting evidence.
 
-- Groq free-tier accounts have a low tokens-per-minute limit. The pipeline shortens long prompts and retries automatically if Groq returns HTTP 429.
-- Keep `.env` private. It is already listed in `.gitignore`.
+![Key Findings Table](Assets/Screenshot%20(832).png)
+
+---
+
+### 4. Strategic Conclusions & Verified Sources
+Reports conclude with policy implications, actionable next steps, and hyperlinked references for complete transparency and citation integrity.
+
+![Conclusions and Sources](Assets/Screenshot%20(833).png)
+
+---
+
+### 5. Critic Review & Quality Assessment
+The Critic agent evaluates the generated report against rigorous academic standards, providing an overall quality score, verified strengths, and specific areas for refinement.
+
+![Critic Review](Assets/Screenshot%20(834).png)
+
+---
+
+### 6. Export & Download Report (PDF & Markdown)
+Once research and critique are finalized, users can immediately download the complete research dossier as a publication-ready PDF or formatted Markdown file.
+
+![Export and Download](Assets/Screenshot%20(835).png)
