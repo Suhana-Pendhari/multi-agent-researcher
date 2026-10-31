@@ -126,10 +126,59 @@ html, body, [class*="css"] {
     padding: 0.7rem 2.2rem !important;
     box-shadow: 0 4px 20px rgba(255,140,50,0.3) !important;
     width: 100%;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
 }
 .stButton > button:hover {
     transform: translateY(-2px) !important;
     box-shadow: 0 8px 28px rgba(255,140,50,0.4) !important;
+}
+
+.stDownloadButton > button,
+[data-testid="stDownloadButton"] > button {
+    background: linear-gradient(135deg, #ff8c32 0%, #ff5a1a 100%) !important;
+    color: #0a0a0f !important;
+    font-family: 'Syne', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 0.03em !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 0.75rem 1.8rem !important;
+    box-shadow: 0 4px 20px rgba(255,140,50,0.3) !important;
+    width: 100% !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+.stDownloadButton > button:hover,
+[data-testid="stDownloadButton"] > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 28px rgba(255,140,50,0.45) !important;
+}
+
+.download-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,140,50,0.25);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(8px);
+}
+.download-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #ff8c32;
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+}
+.download-desc {
+    font-size: 0.88rem;
+    color: #a09890;
+    margin-bottom: 1.2rem;
+    line-height: 1.5;
 }
 
 .step-card {
@@ -500,36 +549,58 @@ if r:
         st.markdown(r["writer"])
         st.markdown("</div>", unsafe_allow_html=True)
 
-        pdf_name = st.session_state.report_name.replace(".md", ".pdf")
-        pdf_bytes = build_report_pdf(
-            topic=st.session_state.get("topic_input") or "Research Report",
-            report=r["writer"],
-            feedback=r.get("critic"),
-        )
-        dl_md, dl_pdf = st.columns(2)
-        with dl_md:
-            st.download_button(
-                label="⬇  Download Report (.md)",
-                data=r["writer"],
-                file_name=st.session_state.report_name,
-                mime="text/markdown",
-                use_container_width=True,
-            )
-        with dl_pdf:
-            st.download_button(
-                label="⬇  Download Report (.pdf)",
-                data=pdf_bytes,
-                file_name=pdf_name,
-                mime="application/pdf",
-                use_container_width=True,
-            )
-
     if "critic" in r:
         st.markdown("""
         <div class="feedback-panel">
             <div class="panel-label green">🧐 Critic Feedback</div>
         """, unsafe_allow_html=True)
         st.markdown(r["critic"])
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    if "writer" in r:
+        st.markdown("""
+        <div class="download-card">
+            <div class="download-title">📥 Export & Download Report</div>
+            <div class="download-desc">
+                Download your complete research report and critic feedback as a publication-ready PDF or formatted Markdown document.
+            </div>
+        """, unsafe_allow_html=True)
+
+        pdf_name = st.session_state.report_name.replace(".md", ".pdf")
+        topic_title = (st.session_state.get("topic_input") or "Research Report").strip()
+
+        try:
+            pdf_bytes = build_report_pdf(
+                topic=topic_title,
+                report=r["writer"],
+                feedback=r.get("critic"),
+            )
+        except Exception as pdf_err:
+            st.error(f"Failed to generate PDF: {pdf_err}")
+            pdf_bytes = None
+
+        dl_pdf, dl_md = st.columns(2)
+        with dl_pdf:
+            if pdf_bytes:
+                st.download_button(
+                    label="📄  Download Report (.pdf)",
+                    data=pdf_bytes,
+                    file_name=pdf_name,
+                    mime="application/pdf",
+                    use_container_width=True,
+                    key="btn_download_pdf",
+                )
+            else:
+                st.button("⚠️ PDF Unavailable", disabled=True, use_container_width=True)
+        with dl_md:
+            st.download_button(
+                label="📝  Download Report (.md)",
+                data=r["writer"],
+                file_name=st.session_state.report_name,
+                mime="text/markdown",
+                use_container_width=True,
+                key="btn_download_md",
+            )
         st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("""

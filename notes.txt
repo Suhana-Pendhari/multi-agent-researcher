@@ -69,12 +69,13 @@ The repository is structured with modular separation of concerns:
 
 multi-agent-system/
 │
-├── .env                  # Environment secrets (MISTRAL_API_KEY, TAVILY_API_KEY)
+├── .env                  # Environment secrets (GROQ_API_KEY, TAVILY_API_KEY, GOOGLE_API_KEY)
 ├── .gitignore            # Git exclusion rules (.env, .venv, __pycache__, etc.)
 ├── requirements.txt      # Project Python dependencies and libraries
 ├── tools.py              # Custom LangChain tools (web_search, scrape_url)
 ├── agents.py             # Agent definitions, prompts, and LCEL chains
 ├── pipeline.py           # Core orchestrator pipeline (CLI entrypoint)
+├── pdf_export.py         # PDF report generator using fpdf2 with headers and styling
 ├── app.py                # Streamlit Web UI with custom styling and state management
 └── notes.txt             # Exhaustive project documentation and knowledge base
 
@@ -169,7 +170,7 @@ Provides a modern visual interface for user interaction.
 • Interactive Results:
   - Collapsible expander panels to view raw outputs from Step 1 (Search) and Step 2 (Reader).
   - Beautifully styled markdown report viewer.
-  - One-click report download (`.md` format timestamped file).
+  - Export & Download options: One-click download as publication-ready PDF (`.pdf`) and formatted Markdown (`.md`).
   - Dedicated green-accented Critic Feedback panel displaying score and verdict.
 
 

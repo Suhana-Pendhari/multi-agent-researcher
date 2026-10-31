@@ -97,9 +97,29 @@ def run_research_pipline(topic:str)->dict:
     print("🎉 Pipeline completed successfully!")
     print("="*50)
 
+    # Save outputs if report was produced
+    if "report" in state and state["report"]:
+        try:
+            with open("research_report.md", "w", encoding="utf-8") as f:
+                f.write(state["report"])
+            print("📝 Saved Markdown report to: research_report.md")
+
+            from pdf_export import build_report_pdf
+            pdf_bytes = build_report_pdf(
+                topic=topic,
+                report=state["report"],
+                feedback=state.get("feedback"),
+            )
+            with open("research_report.pdf", "wb") as f:
+                f.write(pdf_bytes)
+            print("📄 Saved PDF report to: research_report.pdf")
+        except Exception as e:
+            print(f"⚠️ Note: Could not auto-save PDF: {e}")
+
     return state
 
 if __name__ == "__main__":
     topic = input("\n Enter a research topic: ")
     run_research_pipline(topic)
+
     

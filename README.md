@@ -17,6 +17,7 @@ It can be used from a Streamlit web UI or from the command line.
 multi-agent-system/
 ├── app.py              # Streamlit UI
 ├── pipeline.py         # CLI orchestrator
+├── pdf_export.py       # PDF report generation
 ├── agents.py           # Agents, prompts, and LLM setup
 ├── tools.py            # web_search and scrape_url
 ├── test_system.py      # Smoke tests
