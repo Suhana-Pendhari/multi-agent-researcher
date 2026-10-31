@@ -1,0 +1,250 @@
+================================================================================
+                    RESEARCHMIND: MULTI-AGENT AI RESEARCH SYSTEM
+================================================================================
+
+1. PROJECT OVERVIEW
+--------------------------------------------------------------------------------
+ResearchMind is an autonomous multi-agent research assistant that conducts deep,
+end-to-end research on any given topic. By coordinating a team of specialized AI
+agents and chains, the system moves through a 4-stage pipeline:
+  1. Discovery & Live Search: Gathers up-to-date web information.
+  2. Deep Reading & Extraction: Scrapes and extracts full webpage content.
+  3. Synthesis & Report Writing: Compiles structured, professional reports.
+  4. Quality Review & Critique: Evaluates, scores, and provides constructive feedback.
+
+The system is accessible via both a rich, dark-mode Streamlit Web Application and
+a standalone Command-Line Interface (CLI).
+
+
+================================================================================
+2. TECHNOLOGY STACK & DEPENDENCIES
+================================================================================
+The project uses modern Generative AI and web development technologies:
+
+• LangChain & LCEL (langchain, langchain-core, langchain-community)
+  - Purpose: Core agent creation, prompt templating, tool binding, and LCEL
+    (LangChain Expression Language) pipeline composition.
+
+• LangGraph (langgraph)
+  - Purpose: Advanced agentic state management and multi-agent coordination framework.
+
+• Mistral AI (langchain-mistralai, mistralai)
+  - Purpose: Primary Large Language Model (LLM) powering all agents and chains.
+  - Model in use: `mistral-small-2506`
+  - Temperature: `0` (for strict factual accuracy, determinism, and minimal hallucination).
+
+• OpenAI (langchain-openai, openai)
+  - Purpose: Available as a drop-in alternative LLM provider backend.
+
+• Tavily Search API (tavily-python)
+  - Purpose: AI-optimized web search engine that fetches high-signal search
+    results, ranked snippets, and URLs tailored for LLMs.
+
+• Web Scraping (beautifulsoup4, requests, lxml)
+  - Purpose: HTTP document fetching and DOM parsing to strip extraneous elements
+    (scripts, styles, navbars, footers) and return clean, dense text for analysis.
+
+• Streamlit (streamlit)
+  - Purpose: Frontend interactive Web UI with responsive layouts, real-time step
+    tracking, collapsible inspector panels, and markdown export.
+
+• Environment & Security (python-dotenv)
+  - Purpose: Manages sensitive API credentials (TAVILY_API_KEY, MISTRAL_API_KEY)
+    via `.env`.
+
+• Monitoring, Data & Utilities:
+  - langsmith: Execution tracing, agent debugging, and LLM observability.
+  - rich: Rich terminal formatting and formatted logging for CLI execution.
+  - pydantic & typing-extensions: Type safety and data validation.
+  - tiktoken: Token counting and context window estimation.
+  - tenacity: Robust retry logic for API and network resilience.
+  - pandas: Data manipulation and structured output handling.
+  - aiohttp: Asynchronous network operations.
+
+
+================================================================================
+3. PROJECT ARCHITECTURE & FILE STRUCTURE
+================================================================================
+The repository is structured with modular separation of concerns:
+
+multi-agent-system/
+│
+├── .env                  # Environment secrets (MISTRAL_API_KEY, TAVILY_API_KEY)
+├── .gitignore            # Git exclusion rules (.env, .venv, __pycache__, etc.)
+├── requirements.txt      # Project Python dependencies and libraries
+├── tools.py              # Custom LangChain tools (web_search, scrape_url)
+├── agents.py             # Agent definitions, prompts, and LCEL chains
+├── pipeline.py           # Core orchestrator pipeline (CLI entrypoint)
+├── app.py                # Streamlit Web UI with custom styling and state management
+└── notes.txt             # Exhaustive project documentation and knowledge base
+
+
+================================================================================
+4. MODULE BREAKDOWN & IMPLEMENTATION DETAILS
+================================================================================
+
+--------------------------------------------------------------------------------
+A. tools.py (Agent Toolset)
+--------------------------------------------------------------------------------
+Provides the interface between the AI agents and the external web.
+
+1. `web_search(query: str) -> str`
+   - Annotated with `@tool` from LangChain.
+   - Uses `TavilyClient(api_key=...)` to execute a search query.
+   - Fetches the top 5 most relevant results.
+   - Returns a cleanly formatted string containing `Title`, `URL`, and the first
+     300 characters of the content snippet for each result.
+
+2. `scrape_url(url: str) -> str`
+   - Annotated with `@tool` from LangChain.
+   - Performs an HTTP GET request using `requests` with a browser User-Agent
+     and an 8-second timeout.
+   - Parses the DOM using `BeautifulSoup(..., "html.parser")`.
+   - Cleans the webpage by removing `<script>`, `<style>`, `<nav>`, and `<footer>` tags.
+   - Extracts and normalizes text, returning up to 3,000 characters of clean content.
+   - Handles network and parsing errors gracefully with error string fallback.
+
+--------------------------------------------------------------------------------
+B. agents.py (Multi-Agent System & Chains)
+--------------------------------------------------------------------------------
+Configures the LLM, individual agents, prompt templates, and evaluation chains.
+
+1. Model Setup:
+   - Initializes `ChatMistralAI(model="mistral-small-2506", temperature=0)`.
+
+2. Search Agent (`build_search_agent()`):
+   - Created using `create_agent(model=llm, tools=[web_search])`.
+   - Role: Acts as a web discovery agent, issuing queries and summarizing search results.
+
+3. Reader Agent (`build_reader_agent()`):
+   - Created using `create_agent(model=llm, tools=[scrape_url])`.
+   - Role: Reviews search summaries, identifies the highest-signal URL, and scrapes deep content.
+
+4. Writer Chain (`writer_chain`):
+   - Constructed with LCEL: `writer_prompt | llm | StrOutputParser()`.
+   - Role: Synthesizes combined search snippets and scraped full-text into a
+     comprehensive, professional research report.
+   - Output Structure:
+     * Introduction
+     * Key Findings (minimum 3 well-explained points)
+     * Conclusion
+     * Sources (list of all URLs found)
+
+5. Critic Chain (`critic_chain`):
+   - Constructed with LCEL: `critic_prompt | llm | StrOutputParser()`.
+   - Role: Acts as an unbiased peer reviewer and quality assurance critic.
+   - Output Format:
+     * Score: X/10
+     * Strengths: Bullet points
+     * Areas to Improve: Bullet points
+     * One line verdict
+
+--------------------------------------------------------------------------------
+C. pipeline.py (Core Orchestrator & CLI Runner)
+--------------------------------------------------------------------------------
+Orchestrates sequential data flow across agents and chains.
+
+• Function: `run_research_pipline(topic: str) -> dict`
+  - Step 1 (Search): Invokes Search Agent to gather live web snippets.
+  - Step 2 (Read): Passes search results to Reader Agent to pick and scrape top URL.
+  - Step 3 (Write): Combines search + scraped content into `writer_chain` for full report generation.
+  - Step 4 (Critique): Passes the written report into `critic_chain` for grading.
+  - Returns a state dictionary: `{'search_results', 'scraped_content', 'report', 'feedback'}`.
+• CLI Execution:
+  - When executed directly (`python pipeline.py`), prompts for a topic and prints real-time step outputs.
+
+--------------------------------------------------------------------------------
+D. app.py (Streamlit Web Application)
+--------------------------------------------------------------------------------
+Provides a modern visual interface for user interaction.
+
+• Design & Aesthetics:
+  - Custom CSS dark theme (`#0a0a0f` background with warm amber/orange radial glow).
+  - Typography: Google Fonts (`Syne` for headings, `DM Mono` for badges/metadata, `DM Sans` for body).
+  - Glassmorphic input cards and interactive step status cards.
+• Layout:
+  - Hero header with tagline and brand identity.
+  - Split column view: Research query input with quick-pick topic pills on the left;
+    real-time 4-step pipeline status tracker (Waiting, Running, Done) on the right.
+• Interactive Results:
+  - Collapsible expander panels to view raw outputs from Step 1 (Search) and Step 2 (Reader).
+  - Beautifully styled markdown report viewer.
+  - One-click report download (`.md` format timestamped file).
+  - Dedicated green-accented Critic Feedback panel displaying score and verdict.
+
+
+================================================================================
+5. END-TO-END DATA FLOW & AGENT WORKFLOW
+================================================================================
+
+ [ User Query / Topic ]
+           │
+           ▼
+ ┌─────────────────────────────────────────────────────────┐
+ │ STEP 1: Search Agent (build_search_agent)              │
+ │ • Tool: web_search (Tavily API)                         │
+ │ • Output: Top 5 search titles, URLs, and snippets       │
+ └─────────────────────────┬───────────────────────────────┘
+                           │
+                           ▼ state["search_results"]
+ ┌─────────────────────────────────────────────────────────┐
+ │ STEP 2: Reader Agent (build_reader_agent)               │
+ │ • Tool: scrape_url (Requests + BeautifulSoup)           │
+ │ • Action: Analyzes search results & scrapes primary URL │
+ │ • Output: Up to 3,000 chars of cleaned body text        │
+ └─────────────────────────┬───────────────────────────────┘
+                           │
+                           ▼ state["scraped_content"]
+ ┌─────────────────────────────────────────────────────────┐
+ │ STEP 3: Writer Chain (writer_chain)                     │
+ │ • Model: Mistral AI (mistral-small-2506)                │
+ │ • Context: Combined Search Results + Deep Scraped Text  │
+ │ • Output: Formatted Research Report (Intro/Findings/etc)│
+ └─────────────────────────┬───────────────────────────────┘
+                           │
+                           ▼ state["report"]
+ ┌─────────────────────────────────────────────────────────┐
+ │ STEP 4: Critic Chain (critic_chain)                     │
+ │ • Model: Mistral AI (mistral-small-2506)                │
+ │ • Input: Final Research Report                          │
+ │ • Output: Score (X/10), Strengths, Improvements, Verdict│
+ └─────────────────────────┬───────────────────────────────┘
+                           │
+                           ▼ state["feedback"]
+ [ Streamlit UI / CLI Output / Downloadable Markdown Report ]
+
+
+================================================================================
+6. CONFIGURATION & ENVIRONMENT SETUP
+================================================================================
+1. Create and activate a Python virtual environment:
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1   # Windows PowerShell
+   source .venv/bin/activate      # Linux / macOS
+
+2. Install dependencies:
+   pip install -r requirements.txt
+
+3. Create/Configure `.env` file with required API keys:
+   TAVILY_API_KEY="tvly-xxxxxxxxxxxxxxxxxxxxxxxx"
+   MISTRAL_API_KEY="xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+4. Running the Application:
+   • To launch the Web UI:
+     streamlit run app.py
+
+   • To run via Command-Line Interface (CLI):
+     python pipeline.py
+
+
+================================================================================
+7. SUMMARY & KEY HIGHLIGHTS
+================================================================================
+• Modular & Extensible: Tools, agents, pipeline, and UI are completely decoupled.
+• Deterministic & Grounded: Temperature=0 + live web scraping ensures up-to-date,
+  factual, and source-attributed responses.
+• Self-Critiquing: Built-in critic chain ensures report quality assurance before
+  final delivery to the user.
+• Dual Interface: Seamless transition between CLI execution and a modern Streamlit
+  web dashboard.
+================================================================================

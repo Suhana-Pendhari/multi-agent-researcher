@@ -1,13 +1,18 @@
+# App
+streamlit
+fpdf2
+
 # LangChain
 langchain
 langchain-core
 langchain-community
+langchain-groq
 
 # LLM Providers
 langchain-openai
-langchain-mistralai
+langchain-google-genai
 openai
-mistralai
+google-genai
 
 # Multi-Agent Framework
 langgraph
